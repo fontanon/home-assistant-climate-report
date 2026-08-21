@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.1
+
+- Use a Python base image so local Supervisor builds do not depend on Alpine
+  package-index downloads.
+- Publish the project as Climate Report for Home Assistant.
+
 ## 0.2.0-dev
 
 - Generate complete weekly reports on demand.

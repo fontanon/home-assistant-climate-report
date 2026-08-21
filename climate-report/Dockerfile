@@ -1,15 +1,12 @@
-FROM ghcr.io/home-assistant/base:latest
+FROM python:3.13-alpine
 
 ARG BUILD_ARCH
 ARG BUILD_VERSION
 
-RUN apk add --no-cache python3
-
-COPY rootfs /
 COPY app /opt/climate-report/app
 COPY templates /opt/climate-report/templates
 
-RUN chmod a+x /etc/services.d/climate-report/run
+CMD ["python3", "-u", "/opt/climate-report/app/main.py"]
 
 LABEL \
   io.hass.name="Climate Report" \
