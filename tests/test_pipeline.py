@@ -8,8 +8,8 @@ from zoneinfo import ZoneInfo
 
 
 ROOT = Path(__file__).parents[1]
-APP_PATH = ROOT / "weekly-climate-report" / "app"
-TEMPLATE_PATH = ROOT / "weekly-climate-report" / "templates"
+APP_PATH = ROOT / "climate-report" / "app"
+TEMPLATE_PATH = ROOT / "climate-report" / "templates"
 sys.path.insert(0, str(APP_PATH))
 
 from archive import save_report  # noqa: E402

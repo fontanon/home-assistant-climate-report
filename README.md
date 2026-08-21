@@ -1,8 +1,9 @@
-# Weekly Climate Report for Home Assistant
+# Climate Report for Home Assistant
 
-Generate a weekly temperature and humidity report from Home Assistant long-term
-statistics. The project is designed as a community-shareable Home Assistant app
-(formerly add-on).
+Generate weekly indoor temperature and humidity reports from Home Assistant,
+with room-by-room trends, outdoor weather context, data-quality checks, and
+year-over-year comparisons. The project is a community-shareable Home Assistant
+app (formerly add-on).
 
 > Early development preview. Do not use it yet for unattended delivery.
 
@@ -29,5 +30,5 @@ The development version generates a complete archived report on demand from
 long-term statistics. Email delivery and the final Home Assistant scheduling
 workflow remain intentionally disabled until installation testing is complete.
 
-See [`weekly-climate-report/DOCS.md`](weekly-climate-report/DOCS.md) for the
+See [`climate-report/DOCS.md`](climate-report/DOCS.md) for the
 planned installation and configuration flow.

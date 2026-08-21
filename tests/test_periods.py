@@ -5,7 +5,7 @@ import unittest
 from zoneinfo import ZoneInfo
 
 
-APP_PATH = Path(__file__).parents[1] / "weekly-climate-report" / "app"
+APP_PATH = Path(__file__).parents[1] / "climate-report" / "app"
 sys.path.insert(0, str(APP_PATH))
 
 from periods import resolve_periods  # noqa: E402

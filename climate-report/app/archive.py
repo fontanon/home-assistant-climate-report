@@ -20,7 +20,7 @@ def save_report(
 ) -> Path:
     report_dir.mkdir(parents=True, exist_ok=True)
     start = report.period_label.split(" ", 1)[0]
-    target = report_dir / (f"weekly-climate-report-{start}.html" if archive else "latest.html")
+    target = report_dir / (f"climate-report-{start}.html" if archive else "latest.html")
     target.write_text(html, encoding="utf-8")
     (report_dir / "latest.html").write_text(html, encoding="utf-8")
     (report_dir / "latest.json").write_text(

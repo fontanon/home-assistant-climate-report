@@ -18,7 +18,7 @@ from render import render_email_report, render_full_report
 
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
-LOGGER = logging.getLogger("weekly_climate_report")
+LOGGER = logging.getLogger("climate_report")
 
 
 def generate(command: dict[str, object] | None = None) -> Path:
@@ -59,7 +59,7 @@ def generate(command: dict[str, object] | None = None) -> Path:
 
 
 def main() -> int:
-    LOGGER.info("Weekly Climate Report is ready; waiting for stdin commands")
+    LOGGER.info("Climate Report is ready; waiting for stdin commands")
     for line in sys.stdin:
         try:
             command = json.loads(line)

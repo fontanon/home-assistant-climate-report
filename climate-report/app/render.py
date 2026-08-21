@@ -10,7 +10,7 @@ from string import Template
 from report import ClimateReport, RoomReport, VariableReport
 
 
-TEMPLATE_DIR = Path("/opt/weekly-climate-report/templates")
+TEMPLATE_DIR = Path("/opt/climate-report/templates")
 
 
 COPY = {

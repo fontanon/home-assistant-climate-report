@@ -1,8 +1,8 @@
-name: Weekly Climate Report
+name: Climate Report
 version: 0.2.0-dev
-slug: weekly_climate_report
-description: Generate weekly room temperature and humidity reports from Home Assistant statistics
-url: https://github.com/example/ha-weekly-climate-report
+slug: climate_report
+description: Weekly indoor temperature and humidity reports with outdoor context and year-over-year comparisons
+url: https://github.com/fontanon/home-assistant-climate-report
 arch:
   - aarch64
   - amd64

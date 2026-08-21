@@ -3,7 +3,7 @@ from pathlib import Path
 import unittest
 
 
-APP_PATH = Path(__file__).parents[1] / "weekly-climate-report" / "app"
+APP_PATH = Path(__file__).parents[1] / "climate-report" / "app"
 sys.path.insert(0, str(APP_PATH))
 
 from quality import humidity_scale, validate_humidity, validate_temperature  # noqa: E402

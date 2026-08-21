@@ -1,4 +1,4 @@
-# Weekly Climate Report
+# Climate Report
 
 Home Assistant app that turns long-term room temperature and humidity
 statistics into a readable weekly report.

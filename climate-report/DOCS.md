@@ -1,4 +1,4 @@
-# Weekly Climate Report
+# Climate Report
 
 This development preview generates weekly environmental reports from Home
 Assistant long-term statistics.
@@ -39,7 +39,7 @@ Once installed and running, send this payload through the Home Assistant
 `hassio.addon_stdin` action:
 
 ```yaml
-addon: local_weekly_climate_report
+addon: local_climate_report
 input:
   command: generate
 ```
@@ -48,7 +48,7 @@ Generate a historical period by supplying the exclusive end date. This example
 reports the seven complete days ending before May 11:
 
 ```yaml
-addon: local_weekly_climate_report
+addon: local_climate_report
 input:
   command: generate
   end_date: "2026-05-11"
@@ -68,6 +68,6 @@ Generated files are stored under `reports/` in the app configuration mount:
 - `latest.html`: latest full report.
 - `latest-email.html`: latest email-safe summary.
 - `latest.json`: machine-readable calculations.
-- `weekly-climate-report-YYYY-MM-DD.html`: archived full report.
+- `climate-report-YYYY-MM-DD.html`: archived full report.
 
 They are not committed to this repository.
