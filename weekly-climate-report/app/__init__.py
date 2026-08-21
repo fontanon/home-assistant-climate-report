@@ -1,0 +1,1 @@
+"""Weekly Climate Report application."""

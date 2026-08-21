@@ -1,0 +1,27 @@
+configuration:
+  timezone:
+    name: Zona horaria
+    description: Zona IANA utilizada para separar días y semanas.
+  language:
+    name: Idioma
+  report_days:
+    name: Días del reporte
+  day_start:
+    name: Comienzo del día
+  night_start:
+    name: Comienzo de la noche
+  comparison:
+    name: Periodo de comparación
+  archive_reports:
+    name: Archivar reportes
+  dry_run:
+    name: Modo de prueba
+    description: Genera el resultado sin enviar correo.
+  notifier:
+    name: Notificador de Home Assistant
+  weather_entity:
+    name: Entidad meteorológica
+  rooms:
+    name: Habitaciones
+  outdoor:
+    name: Referencia exterior

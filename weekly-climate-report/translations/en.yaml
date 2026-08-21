@@ -1,0 +1,27 @@
+configuration:
+  timezone:
+    name: Time zone
+    description: IANA time zone used to split days and weeks.
+  language:
+    name: Language
+  report_days:
+    name: Report days
+  day_start:
+    name: Day starts
+  night_start:
+    name: Night starts
+  comparison:
+    name: Comparison period
+  archive_reports:
+    name: Archive reports
+  dry_run:
+    name: Dry run
+    description: Generate output without sending email.
+  notifier:
+    name: Home Assistant notifier
+  weather_entity:
+    name: Weather entity
+  rooms:
+    name: Rooms
+  outdoor:
+    name: Outdoor reference
