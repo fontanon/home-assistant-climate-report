@@ -23,3 +23,6 @@
 - Add internal Home Assistant API client foundation.
 - Add deterministic quality and metric helpers.
 - Add stdin command loop and report template placeholders.
+# 0.3.0
+
+- Add a Home Assistant Ingress viewer for the latest generated report.

@@ -4,8 +4,11 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import sys
+import threading
 from datetime import date, datetime
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -19,6 +22,30 @@ from render import render_email_report, render_full_report
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 LOGGER = logging.getLogger("climate_report")
+
+
+class ReportHandler(BaseHTTPRequestHandler):
+    def do_GET(self) -> None:
+        target = DEFAULT_REPORT_DIR / "latest.html"
+        if not target.is_file():
+            self.send_error(404, "No report has been generated yet")
+            return
+        payload = target.read_bytes()
+        self.send_response(200)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(payload)))
+        self.end_headers()
+        self.wfile.write(payload)
+
+    def log_message(self, message: str, *args: object) -> None:
+        LOGGER.info("Ingress: " + message, *args)
+
+
+def start_report_server() -> None:
+    port = int(os.environ.get("REPORT_HTTP_PORT", "8099"))
+    server = ThreadingHTTPServer(("0.0.0.0", port), ReportHandler)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    LOGGER.info("Report viewer listening on port %d", port)
 
 
 def generate(command: dict[str, object] | None = None) -> Path:
@@ -59,6 +86,7 @@ def generate(command: dict[str, object] | None = None) -> Path:
 
 
 def main() -> int:
+    start_report_server()
     LOGGER.info("Climate Report is ready; waiting for stdin commands")
     for line in sys.stdin:
         try:
