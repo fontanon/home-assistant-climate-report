@@ -25,9 +25,9 @@ Home Assistant's private app options.
 
 ## Development status
 
-The initial scaffold accepts a `generate` command, validates its configuration,
-and contains the API, quality and metric foundations. Report extraction and
-rendering will be implemented iteratively and tested with synthetic fixtures.
+The development version generates a complete archived report on demand from
+long-term statistics. Email delivery and the final Home Assistant scheduling
+workflow remain intentionally disabled until installation testing is complete.
 
 See [`weekly-climate-report/DOCS.md`](weekly-climate-report/DOCS.md) for the
 planned installation and configuration flow.

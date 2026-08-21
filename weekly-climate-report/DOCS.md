@@ -5,9 +5,8 @@ Assistant long-term statistics.
 
 ## Current milestone
 
-The app container and command channel are scaffolded. It currently validates
-configuration when receiving a `generate` command and intentionally does not
-send email.
+The app generates and archives complete HTML reports. It intentionally does not
+send email yet; keep `dry_run` enabled while validating output.
 
 ## Example configuration
 
@@ -45,6 +44,16 @@ input:
   command: generate
 ```
 
+Generate a historical period by supplying the exclusive end date. This example
+reports the seven complete days ending before May 11:
+
+```yaml
+addon: local_weekly_climate_report
+input:
+  command: generate
+  end_date: "2026-05-11"
+```
+
 Keep `dry_run: true` until the generated report has been reviewed.
 
 ## Data access
@@ -54,5 +63,11 @@ The app uses Home Assistant's internal API proxy and the automatically supplied
 
 ## Persistent files
 
-Future generated reports will be stored in the app configuration mount. They
-will not be committed to this repository.
+Generated files are stored under `reports/` in the app configuration mount:
+
+- `latest.html`: latest full report.
+- `latest-email.html`: latest email-safe summary.
+- `latest.json`: machine-readable calculations.
+- `weekly-climate-report-YYYY-MM-DD.html`: archived full report.
+
+They are not committed to this repository.
