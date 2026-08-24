@@ -31,19 +31,27 @@ def resolve_periods(
     comparison: str,
     *,
     now: datetime | None = None,
+    start_date: date | None = None,
     end_date: date | None = None,
 ) -> Periods:
     zone = ZoneInfo(timezone)
     local_now = now.astimezone(zone) if now else datetime.now(zone)
     final_date = end_date or local_now.date()
     end = datetime.combine(final_date, time.min, zone)
-    start = end - timedelta(days=report_days)
+    start = (
+        datetime.combine(start_date, time.min, zone)
+        if start_date
+        else end - timedelta(days=report_days)
+    )
+    if start >= end:
+        raise ValueError("Report start date must be earlier than end date")
+    period_days = (end.date() - start.date()).days
     current = Period(start, end, _date_label(start.date(), (end - timedelta(days=1)).date()))
 
     previous: Period | None = None
     if comparison == "same_dates":
         previous_start = _replace_year(start, start.year - 1)
-        previous_end = previous_start + timedelta(days=report_days)
+        previous_end = previous_start + timedelta(days=period_days)
         previous = Period(
             previous_start,
             previous_end,
@@ -56,7 +64,7 @@ def resolve_periods(
         except ValueError:
             previous_date = date.fromisocalendar(iso_year - 1, 52, iso_weekday)
         previous_start = datetime.combine(previous_date, time.min, zone)
-        previous_end = previous_start + timedelta(days=report_days)
+        previous_end = previous_start + timedelta(days=period_days)
         previous = Period(
             previous_start,
             previous_end,

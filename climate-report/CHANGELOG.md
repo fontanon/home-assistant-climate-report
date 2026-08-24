@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.4.0
+
+- Add an Ingress form to generate reports for an inclusive custom date range.
+- Keep the existing stdin weekly and historical generation commands compatible.
+
+## 0.3.0
+
+- Add a Home Assistant Ingress viewer for the latest generated report.
+
 ## 0.2.1
 
 - Use a Python base image so local Supervisor builds do not depend on Alpine
@@ -23,6 +32,3 @@
 - Add internal Home Assistant API client foundation.
 - Add deterministic quality and metric helpers.
 - Add stdin command loop and report template placeholders.
-# 0.3.0
-
-- Add a Home Assistant Ingress viewer for the latest generated report.

@@ -29,3 +29,26 @@ class PeriodsTest(unittest.TestCase):
             "Europe/Madrid", 7, "none", end_date=date(2026, 3, 30)
         )
         self.assertEqual(periods.current.expected_hours, 167)
+
+    def test_custom_date_range_and_comparison_keep_requested_length(self) -> None:
+        periods = resolve_periods(
+            "Europe/Madrid",
+            7,
+            "same_dates",
+            start_date=date(2026, 5, 2),
+            end_date=date(2026, 5, 12),
+        )
+        self.assertEqual(periods.current.label, "2026-05-02 – 2026-05-11")
+        self.assertEqual(periods.current.expected_hours, 240)
+        assert periods.comparison is not None
+        self.assertEqual(periods.comparison.label, "2025-05-02 – 2025-05-11")
+
+    def test_custom_range_rejects_reversed_dates(self) -> None:
+        with self.assertRaises(ValueError):
+            resolve_periods(
+                "Europe/Madrid",
+                7,
+                "none",
+                start_date=date(2026, 5, 12),
+                end_date=date(2026, 5, 2),
+            )
