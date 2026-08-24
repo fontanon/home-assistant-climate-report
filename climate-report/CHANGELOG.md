@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.1
+
+- Support both legacy Companion notify actions and modern notify entities.
+- Replace generic HTTP 400 push failures with a precise unavailable-target error.
+
 ## 0.5.0
 
 - Add secondary day, night, range and year-over-year humidity measurements.

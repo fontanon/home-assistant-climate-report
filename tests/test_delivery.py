@@ -37,12 +37,34 @@ class DeliveryTest(unittest.TestCase):
     def test_sends_push_through_home_assistant_notify(self) -> None:
         settings = SimpleNamespace(push_notifier="notify.mobile_app_pixel_9a_de_felix")
         client = MagicMock()
+        client.request.return_value = [
+            {"domain": "notify", "services": {"mobile_app_pixel_9a_de_felix": {}}}
+        ]
         with patch("delivery.HomeAssistantClient", return_value=client):
             send_push(settings, "Climate Report", "Ready")
         client.call_service.assert_called_once_with(
             "notify",
             "mobile_app_pixel_9a_de_felix",
             {"title": "Climate Report", "message": "Ready"},
+        )
+
+    def test_sends_push_to_modern_notify_entity(self) -> None:
+        settings = SimpleNamespace(push_notifier="notify.mobile_app_pixel_9a_de_felix")
+        client = MagicMock()
+        client.request.side_effect = [
+            [{"domain": "notify", "services": {"send_message": {}}}],
+            {"entity_id": "notify.mobile_app_pixel_9a_de_felix"},
+        ]
+        with patch("delivery.HomeAssistantClient", return_value=client):
+            send_push(settings, "Climate Report", "Ready")
+        client.call_service.assert_called_once_with(
+            "notify",
+            "send_message",
+            {
+                "entity_id": "notify.mobile_app_pixel_9a_de_felix",
+                "title": "Climate Report",
+                "message": "Ready",
+            },
         )
 
 
