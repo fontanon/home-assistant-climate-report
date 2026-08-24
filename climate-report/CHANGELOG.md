@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.4
+
+- Replace browser CSS with a complete Gmail-compatible table layout and inline styles.
+- Preserve room, temperature, humidity, comparison and daily details in email.
+- Render email-safe temperature and humidity trend sparklines.
+
 ## 0.5.3
 
 - Send the complete Web UI report as the email body instead of the compact summary.

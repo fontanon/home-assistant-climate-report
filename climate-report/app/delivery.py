@@ -15,6 +15,7 @@ def send_email(
     subject: str,
     *,
     attachment_name: str | None = None,
+    attachment_html: str | None = None,
 ) -> None:
     if not settings.email_enabled:
         raise ValueError("activa 'Activar envío por correo' en la configuración del add-on")
@@ -26,7 +27,7 @@ def send_email(
     message.add_alternative(html, subtype="html")
     if attachment_name:
         message.add_attachment(
-            html.encode("utf-8"),
+            (attachment_html or html).encode("utf-8"),
             maintype="text",
             subtype="html",
             filename=attachment_name,

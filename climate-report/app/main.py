@@ -90,14 +90,16 @@ class ReportHandler(BaseHTTPRequestHandler):
                     send_email(settings, "<p>La configuración de correo de Climate Report funciona correctamente.</p>", "Prueba de Climate Report")
                     message = "Correo de prueba enviado"
                 else:
-                    target = DEFAULT_REPORT_DIR / "latest.html"
-                    if not target.is_file():
+                    target = DEFAULT_REPORT_DIR / "latest-email.html"
+                    full_target = DEFAULT_REPORT_DIR / "latest.html"
+                    if not target.is_file() or not full_target.is_file():
                         raise ValueError("Todavía no hay un reporte para enviar")
                     send_email(
                         settings,
                         target.read_text(encoding="utf-8"),
                         "Climate Report · último reporte",
                         attachment_name="climate-report-ultimo.html",
+                        attachment_html=full_target.read_text(encoding="utf-8"),
                     )
                     message = "Último reporte enviado por correo"
             except Exception as error:
@@ -199,9 +201,10 @@ def generate(command: dict[str, object] | None = None) -> Path:
         if settings.email_enabled:
             send_email(
                 settings,
-                html,
+                email_html,
                 f"Climate Report · {report.period_label}",
                 attachment_name=f"climate-report-{report.period_label[:10]}.html",
+                attachment_html=html,
             )
             LOGGER.info("Report sent by email")
         if settings.push_notifier:
