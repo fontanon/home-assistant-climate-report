@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.1
+
+- Plot daily humidity alongside temperature in every room chart.
+- Preserve humidity charts and daily values when temperature data is missing.
+- Auto-size the report preview so the Ingress page has a single scrollbar.
+- Show temperature and humidity coverage separately.
+
 ## 0.4.0
 
 - Add an Ingress form to generate reports for an inclusive custom date range.

@@ -34,10 +34,14 @@ def _viewer_page(message: str = "") -> bytes:
     html = f"""<!doctype html>
 <html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Climate Report</title><style>
-body{{margin:0;background:#f4f1e9;color:#17322d;font-family:system-ui,sans-serif}}main{{width:min(1120px,calc(100% - 32px));margin:32px auto}}h1{{font:500 42px Georgia,serif;margin-bottom:8px}}p{{color:#64746f}}form{{display:flex;flex-wrap:wrap;gap:14px;align-items:end;padding:20px;background:#fffdf8;border-radius:18px;box-shadow:0 10px 30px #17322d14}}label{{display:grid;gap:6px;font-size:13px;font-weight:700}}input,button{{font:inherit;padding:10px 12px;border:1px solid #dfe4dc;border-radius:10px}}button{{border-color:#226454;background:#226454;color:white;font-weight:700;cursor:pointer}}.notice{{padding:12px 16px;border-radius:10px;background:#e6f2ec;color:#174b3f}}iframe{{width:100%;height:1100px;margin-top:22px;border:0;border-radius:18px;background:white}}
+body{{margin:0;background:#f4f1e9;color:#17322d;font-family:system-ui,sans-serif}}main{{width:min(1120px,calc(100% - 32px));margin:32px auto}}h1{{font:500 42px Georgia,serif;margin-bottom:8px}}p{{color:#64746f}}form{{display:flex;flex-wrap:wrap;gap:14px;align-items:end;padding:20px;background:#fffdf8;border-radius:18px;box-shadow:0 10px 30px #17322d14}}label{{display:grid;gap:6px;font-size:13px;font-weight:700}}input,button{{font:inherit;padding:10px 12px;border:1px solid #dfe4dc;border-radius:10px}}button{{border-color:#226454;background:#226454;color:white;font-weight:700;cursor:pointer}}.notice{{padding:12px 16px;border-radius:10px;background:#e6f2ec;color:#174b3f}}iframe{{display:block;width:100%;height:600px;margin-top:22px;border:0;border-radius:18px;background:white;overflow:hidden}}
 </style></head><body><main><h1>Climate Report</h1><p>Genera un informe manual para cualquier periodo de hasta 366 días.</p>{notice}
 <form method="post" action="generate"><label>Fecha inicial<input required type="date" name="start_date" value="{start.isoformat()}"></label><label>Fecha final (incluida)<input required type="date" name="end_date" value="{(today - timedelta(days=1)).isoformat()}"></label><button type="submit">Generar reporte</button></form>
-<iframe src="report" title="Último reporte"></iframe></main></body></html>"""
+<iframe id="report" src="report" scrolling="no" title="Último reporte"></iframe></main><script>
+const frame=document.getElementById('report');
+function fitReport(){{try{{frame.style.height=frame.contentDocument.documentElement.scrollHeight+'px'}}catch(error){{}}}}
+frame.addEventListener('load',()=>{{fitReport();try{{new ResizeObserver(fitReport).observe(frame.contentDocument.documentElement)}}catch(error){{}}}});
+</script></body></html>"""
     return html.encode("utf-8")
 
 

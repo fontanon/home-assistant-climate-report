@@ -1,3 +1,4 @@
+from dataclasses import replace
 from datetime import datetime, timedelta
 import json
 import sys
@@ -17,6 +18,7 @@ from config import Room, Settings  # noqa: E402
 from extract import build_report  # noqa: E402
 from periods import resolve_periods  # noqa: E402
 from render import render_email_report, render_full_report  # noqa: E402
+from report import VariableReport  # noqa: E402
 
 
 class FakeHomeAssistantClient:
@@ -101,8 +103,27 @@ class PipelineTest(unittest.TestCase):
         email = render_email_report(report, "es", template_dir=TEMPLATE_PATH)
         self.assertIn("Living room", html)
         self.assertIn("2026-05-04", html)
+        self.assertIn("temperature-line", html)
+        self.assertIn("humidity-line", html)
         self.assertIn("Living room", email)
         self.assertNotIn("{{", html)
+
+        empty_temperature = VariableReport(
+            unit="°C",
+            overall=None,
+            daytime=None,
+            nighttime=None,
+            daily=(),
+            coverage=0.0,
+        )
+        humidity_only_room = replace(report.rooms[0], temperature=empty_temperature)
+        humidity_only_report = replace(report, rooms=(humidity_only_room,))
+        humidity_only_html = render_full_report(
+            humidity_only_report, "es", template_dir=TEMPLATE_PATH
+        )
+        self.assertIn("Sin datos de temperatura", humidity_only_html)
+        self.assertIn("humidity-line", humidity_only_html)
+        self.assertIn("Humedad: 59 %", humidity_only_html)
 
         with TemporaryDirectory() as temporary:
             target = save_report(report, html, report_dir=Path(temporary))

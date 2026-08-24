@@ -30,6 +30,7 @@ COPY = {
         "no_humidity": "Sin sensor de humedad",
         "no_comparison": "Sin datos comparables",
         "generated": "Generado",
+        "no_temperature": "Sin datos de temperatura",
     },
     "en": {
         "title": "Home climate",
@@ -47,6 +48,7 @@ COPY = {
         "no_humidity": "No humidity sensor",
         "no_comparison": "No comparable data",
         "generated": "Generated",
+        "no_temperature": "No temperature data",
     },
 }
 
@@ -136,10 +138,12 @@ def _room_card(room: RoomReport, text: dict[str, str]) -> str:
         delta = temperature.overall.mean - comparison.overall.mean
     delta_text = text["no_comparison"] if delta is None else f"{delta:+.1f} °C"
     humidity_text = _fmt(_mean(humidity), "%", 0) if humidity else text["no_humidity"]
+    temperature_text = _fmt(_mean(temperature), "°C") if temperature.overall else text["no_temperature"]
+    humidity_coverage = f" · {escape(text['humidity'])} {humidity.coverage:.0%}" if humidity and humidity.overall else ""
     return f"""
       <article class="room card">
-        <div class="room-intro"><span class="tag">{temperature.coverage:.0%} {escape(text['coverage'].lower())}</span><h3>{escape(room.name)}</h3><div class="main-value">{_fmt(_mean(temperature), '°C')}</div><p>{escape(text['humidity'])}: {escape(humidity_text)}</p></div>
-        <div class="room-body">{_sparkline(temperature)}<div class="ranges"><div><span>{escape(text['day'])}</span><b>{_fmt_summary(day)}</b></div><div><span>{escape(text['night'])}</span><b>{_fmt_summary(night)}</b></div><div><span>{escape(text['comparison'])}</span><b>{escape(delta_text)}</b></div></div></div>
+        <div class="room-intro"><span class="tag">Temp. {temperature.coverage:.0%}{humidity_coverage}</span><h3>{escape(room.name)}</h3><div class="main-value">{escape(temperature_text)}</div><p>{escape(text['humidity'])}: {escape(humidity_text)}</p></div>
+        <div class="room-body">{_sparkline(temperature, humidity, text)}<div class="ranges"><div><span>{escape(text['day'])}</span><b>{_fmt_summary(day)}</b></div><div><span>{escape(text['night'])}</span><b>{_fmt_summary(night)}</b></div><div><span>{escape(text['comparison'])}</span><b>{escape(delta_text)}</b></div></div></div>
         <div class="daily-wrap">{_daily_table(temperature, humidity)}</div>
       </article>
     """
@@ -154,29 +158,57 @@ def _outdoor_card(report: ClimateReport, text: dict[str, str]) -> str:
 
 
 def _daily_table(temperature: VariableReport, humidity: VariableReport | None) -> str:
+    temperature_by_day = {item.day: item.summary for item in temperature.daily}
     humidity_by_day = {item.day: item.summary for item in humidity.daily} if humidity else {}
     cells = []
-    for item in temperature.daily:
-        humidity_summary = humidity_by_day.get(item.day)
+    for day in sorted(set(temperature_by_day) | set(humidity_by_day)):
+        temperature_summary = temperature_by_day.get(day)
+        humidity_summary = humidity_by_day.get(day)
         cells.append(
-            f"<td><span>{item.day.strftime('%a %d')}</span><b>{item.summary.mean:.1f}°</b>"
-            f"<small>{item.summary.minimum:.1f}–{item.summary.maximum:.1f}° · {_fmt(humidity_summary.mean if humidity_summary else None, '%', 0)}</small></td>"
+            f"<td><span>{day.strftime('%a %d')}</span><b>{_fmt(temperature_summary.mean if temperature_summary else None, '°C')}</b>"
+            f"<small>{_fmt_range(temperature_summary)} · {_fmt(humidity_summary.mean if humidity_summary else None, '%', 0)}</small></td>"
         )
     return f"<table class='daily'><tr>{''.join(cells)}</tr></table>"
 
 
-def _sparkline(variable: VariableReport) -> str:
-    values = [item.summary.mean for item in variable.daily]
-    if len(values) < 2:
+def _sparkline(temperature: VariableReport, humidity: VariableReport | None, text: dict[str, str]) -> str:
+    temperature_values = {item.day: item.summary.mean for item in temperature.daily}
+    humidity_values = {item.day: item.summary.mean for item in humidity.daily} if humidity else {}
+    days = sorted(set(temperature_values) | set(humidity_values))
+    if len(days) < 2:
         return ""
-    low, high = min(values), max(values)
+    temperature_points = _series_points(days, temperature_values)
+    humidity_points = _series_points(days, humidity_values)
+    lines = (f"<polyline class='temperature-line' points='{temperature_points}'/>" if temperature_points else "") + (f"<polyline class='humidity-line' points='{humidity_points}'/>" if humidity_points else "")
+    legend = "<div class='chart-legend'>"
+    if temperature_points:
+        legend += "<span class='temperature-key'>Temperatura</span>"
+    if humidity_points:
+        legend += f"<span class='humidity-key'>{escape(text['humidity'])}</span>"
+    legend += "</div>"
+    return f"<div class='chart'>{legend}<svg viewBox='0 0 300 80' role='img' aria-label='Daily temperature and humidity means'><line x1='10' y1='65' x2='290' y2='65'/>{lines}</svg></div>"
+
+
+def _series_points(days: list[object], values: dict[object, float]) -> str:
+    present = list(values.values())
+    if len(present) < 2:
+        return ""
+    low, high = min(present), max(present)
     span = high - low or 1.0
     points = []
-    for index, value in enumerate(values):
-        x = 10 + index * (280 / (len(values) - 1))
-        y = 65 - ((value - low) / span) * 48
+    for index, day in enumerate(days):
+        if day not in values:
+            continue
+        x = 10 + index * (280 / (len(days) - 1))
+        y = 65 - ((values[day] - low) / span) * 48
         points.append(f"{x:.1f},{y:.1f}")
-    return f"<svg viewBox='0 0 300 80' role='img' aria-label='Daily means'><line x1='10' y1='65' x2='290' y2='65'/><polyline points='{' '.join(points)}'/></svg>"
+    return " ".join(points)
+
+
+def _fmt_range(summary: object) -> str:
+    if summary is None:
+        return "—"
+    return f"{summary.minimum:.1f}–{summary.maximum:.1f} °C"
 
 
 def _kpi(label: str, value: str, foot: str) -> str:
