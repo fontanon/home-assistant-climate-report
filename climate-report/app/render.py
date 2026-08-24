@@ -140,10 +140,21 @@ def _room_card(room: RoomReport, text: dict[str, str]) -> str:
     humidity_text = _fmt(_mean(humidity), "%", 0) if humidity else text["no_humidity"]
     temperature_text = _fmt(_mean(temperature), "°C") if temperature.overall else text["no_temperature"]
     humidity_coverage = f" · {escape(text['humidity'])} {humidity.coverage:.0%}" if humidity and humidity.overall else ""
+    humidity_delta = None
+    if humidity and humidity.overall and room.comparison_humidity and room.comparison_humidity.overall:
+        humidity_delta = humidity.overall.mean - room.comparison_humidity.overall.mean
+    humidity_stats = ""
+    if humidity and humidity.overall:
+        humidity_stats = f"""
+          <div class="humidity-ranges">
+            <div><span>{escape(text['humidity'])} · {escape(text['day'])}</span><b>{_fmt_summary_unit(humidity.daytime, '%', 0)}</b></div>
+            <div><span>{escape(text['humidity'])} · {escape(text['night'])}</span><b>{_fmt_summary_unit(humidity.nighttime, '%', 0)}</b></div>
+            <div><span>{escape(text['humidity'])} · {escape(text['comparison'])}</span><b>{text['no_comparison'] if humidity_delta is None else f'{humidity_delta:+.0f} pp'}</b></div>
+          </div>"""
     return f"""
       <article class="room card">
         <div class="room-intro"><span class="tag">Temp. {temperature.coverage:.0%}{humidity_coverage}</span><h3>{escape(room.name)}</h3><div class="main-value">{escape(temperature_text)}</div><p>{escape(text['humidity'])}: {escape(humidity_text)}</p></div>
-        <div class="room-body">{_sparkline(temperature, humidity, text)}<div class="ranges"><div><span>{escape(text['day'])}</span><b>{_fmt_summary(day)}</b></div><div><span>{escape(text['night'])}</span><b>{_fmt_summary(night)}</b></div><div><span>{escape(text['comparison'])}</span><b>{escape(delta_text)}</b></div></div></div>
+        <div class="room-body">{_sparkline(temperature, humidity, text)}<div class="ranges"><div><span>{escape(text['day'])}</span><b>{_fmt_summary(day)}</b></div><div><span>{escape(text['night'])}</span><b>{_fmt_summary(night)}</b></div><div><span>{escape(text['comparison'])}</span><b>{escape(delta_text)}</b></div></div>{humidity_stats}</div>
         <div class="daily-wrap">{_daily_table(temperature, humidity)}</div>
       </article>
     """
@@ -238,3 +249,9 @@ def _fmt_summary(summary: object) -> str:
     if summary is None:
         return "—"
     return f"{summary.mean:.1f} °C · {summary.minimum:.1f}–{summary.maximum:.1f} °C"
+
+
+def _fmt_summary_unit(summary: object, unit: str, digits: int = 1) -> str:
+    if summary is None:
+        return "—"
+    return f"{summary.mean:.{digits}f} {unit} · {summary.minimum:.{digits}f}–{summary.maximum:.{digits}f} {unit}"

@@ -14,11 +14,29 @@ configuration:
     name: Comparison period
   archive_reports:
     name: Archive reports
+    description: Keep a dated, browsable copy of every generated report.
   dry_run:
     name: Dry run
     description: Generate output without sending email.
-  notifier:
-    name: Home Assistant notifier
+  push_notifier:
+    name: Push notification service
+    description: Companion App service, for example notify.mobile_app_pixel_9a_de_felix.
+  email_enabled:
+    name: Enable email delivery
+  email_to:
+    name: Recipient email
+  email_from:
+    name: Sender email
+  smtp_host:
+    name: SMTP server
+  smtp_port:
+    name: SMTP port
+  smtp_security:
+    name: SMTP security
+  smtp_username:
+    name: SMTP username
+  smtp_password:
+    name: SMTP password
   weather_entity:
     name: Weather entity
   rooms:

@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 import sys
 import threading
 from datetime import date, datetime, timedelta
@@ -16,6 +17,7 @@ from zoneinfo import ZoneInfo
 
 from archive import DEFAULT_REPORT_DIR, save_report
 from config import load_settings
+from delivery import send_email, send_push
 from extract import build_report
 from home_assistant import HomeAssistantClient
 from periods import resolve_periods
@@ -31,12 +33,19 @@ def _viewer_page(message: str = "") -> bytes:
     today = date.today()
     start = today - timedelta(days=7)
     notice = f'<p class="notice">{escape(message)}</p>' if message else ""
+    archives = sorted(DEFAULT_REPORT_DIR.glob("climate-report-*.html"), reverse=True)
+    archive_items = "".join(
+        f'<li><a href="archive/{quote(item.name)}">{escape(item.stem.removeprefix("climate-report-"))}</a></li>'
+        for item in archives
+    ) or "<li>Todavía no hay reportes archivados.</li>"
     html = f"""<!doctype html>
 <html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Climate Report</title><style>
-body{{margin:0;background:#f4f1e9;color:#17322d;font-family:system-ui,sans-serif}}main{{width:min(1120px,calc(100% - 32px));margin:32px auto}}h1{{font:500 42px Georgia,serif;margin-bottom:8px}}p{{color:#64746f}}form{{display:flex;flex-wrap:wrap;gap:14px;align-items:end;padding:20px;background:#fffdf8;border-radius:18px;box-shadow:0 10px 30px #17322d14}}label{{display:grid;gap:6px;font-size:13px;font-weight:700}}input,button{{font:inherit;padding:10px 12px;border:1px solid #dfe4dc;border-radius:10px}}button{{border-color:#226454;background:#226454;color:white;font-weight:700;cursor:pointer}}.notice{{padding:12px 16px;border-radius:10px;background:#e6f2ec;color:#174b3f}}iframe{{display:block;width:100%;height:600px;margin-top:22px;border:0;border-radius:18px;background:white;overflow:hidden}}
+body{{margin:0;background:#f4f1e9;color:#17322d;font-family:system-ui,sans-serif}}main{{width:min(1120px,calc(100% - 32px));margin:32px auto}}h1{{font:500 42px Georgia,serif;margin-bottom:8px}}h2{{font:500 26px Georgia,serif}}p{{color:#64746f}}form{{display:flex;flex-wrap:wrap;gap:14px;align-items:end;padding:20px;background:#fffdf8;border-radius:18px;box-shadow:0 10px 30px #17322d14}}label{{display:grid;gap:6px;font-size:13px;font-weight:700}}input,button{{font:inherit;padding:10px 12px;border:1px solid #dfe4dc;border-radius:10px}}button{{border-color:#226454;background:#226454;color:white;font-weight:700;cursor:pointer}}.secondary{{background:#397e91;border-color:#397e91}}.actions{{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0}}.actions form{{padding:0;background:none;box-shadow:none}}.notice{{padding:12px 16px;border-radius:10px;background:#e6f2ec;color:#174b3f}}.archive{{margin-top:24px;padding:20px;background:#fffdf8;border-radius:18px}}.archive ul{{display:flex;flex-wrap:wrap;gap:8px;padding:0;list-style:none}}.archive a{{display:block;padding:8px 11px;border-radius:9px;background:#edf4f5;color:#226454;text-decoration:none}}iframe{{display:block;width:100%;height:600px;margin-top:22px;border:0;border-radius:18px;background:white;overflow:hidden}}
 </style></head><body><main><h1>Climate Report</h1><p>Genera un informe manual para cualquier periodo de hasta 366 días.</p>{notice}
 <form method="post" action="generate"><label>Fecha inicial<input required type="date" name="start_date" value="{start.isoformat()}"></label><label>Fecha final (incluida)<input required type="date" name="end_date" value="{(today - timedelta(days=1)).isoformat()}"></label><button type="submit">Generar reporte</button></form>
+<div class="actions"><form method="post" action="send-email"><button class="secondary">Enviar último reporte por correo</button></form><form method="post" action="test-email"><button class="secondary">Probar correo</button></form><form method="post" action="send-push"><button class="secondary">Probar notificación push</button></form></div>
+<section class="archive"><h2>Reportes archivados</h2><ul>{archive_items}</ul></section>
 <iframe id="report" src="report" scrolling="no" title="Último reporte"></iframe></main><script>
 const frame=document.getElementById('report');
 function fitReport(){{try{{frame.style.height=frame.contentDocument.documentElement.scrollHeight+'px'}}catch(error){{}}}}
@@ -52,6 +61,14 @@ class ReportHandler(BaseHTTPRequestHandler):
             message = parse_qs(parsed.query).get("message", [""])[0]
             self._send_html(_viewer_page(message))
             return
+        if parsed.path.startswith("/archive/"):
+            name = parsed.path.rsplit("/", 1)[-1]
+            target = DEFAULT_REPORT_DIR / name
+            if not re.fullmatch(r"climate-report-\d{4}-\d{2}-\d{2}\.html", name) or not target.is_file():
+                self.send_error(404)
+                return
+            self._send_html(target.read_bytes())
+            return
         if parsed.path.rstrip("/") != "/report":
             self.send_error(404)
             return
@@ -62,7 +79,28 @@ class ReportHandler(BaseHTTPRequestHandler):
         self._send_html(target.read_bytes())
 
     def do_POST(self) -> None:
-        if urlparse(self.path).path.rstrip("/") != "/generate":
+        path = urlparse(self.path).path.rstrip("/")
+        if path in {"/send-email", "/test-email", "/send-push"}:
+            try:
+                settings = load_settings()
+                if path == "/send-push":
+                    send_push(settings, "Climate Report", "La notificación de Climate Report funciona correctamente.")
+                    message = "Notificación push enviada"
+                elif path == "/test-email":
+                    send_email(settings, "<p>La configuración de correo de Climate Report funciona correctamente.</p>", "Prueba de Climate Report")
+                    message = "Correo de prueba enviado"
+                else:
+                    target = DEFAULT_REPORT_DIR / "latest-email.html"
+                    if not target.is_file():
+                        raise ValueError("Todavía no hay un reporte para enviar")
+                    send_email(settings, target.read_text(encoding="utf-8"), "Climate Report · último reporte")
+                    message = "Último reporte enviado por correo"
+            except Exception as error:
+                LOGGER.exception("Manual delivery failed")
+                message = f"No se pudo enviar: {error}"
+            self._redirect(message)
+            return
+        if path != "/generate":
             self.send_error(404)
             return
         try:
@@ -87,6 +125,9 @@ class ReportHandler(BaseHTTPRequestHandler):
             message = f"Reporte generado: {start.isoformat()} – {final.isoformat()}"
         except (KeyError, IndexError, UnicodeDecodeError, ValueError) as error:
             message = f"No se pudo generar: {error}"
+        self._redirect(message)
+
+    def _redirect(self, message: str) -> None:
         self.send_response(303)
         self.send_header("Location", f"./?message={quote(message)}")
         self.end_headers()
@@ -148,9 +189,14 @@ def generate(command: dict[str, object] | None = None) -> Path:
     email_target.write_text(email_html, encoding="utf-8")
     LOGGER.info("Report written to %s", target)
     if settings.dry_run:
-        LOGGER.info("Dry-run enabled; email delivery skipped")
+        LOGGER.info("Dry-run enabled; automatic delivery skipped")
     else:
-        LOGGER.warning("Email delivery is not enabled in this milestone; report was archived only")
+        if settings.email_enabled:
+            send_email(settings, email_html, f"Climate Report · {report.period_label}")
+            LOGGER.info("Report sent by email")
+        if settings.push_notifier:
+            send_push(settings, "Climate Report", f"Reporte generado: {report.period_label}")
+            LOGGER.info("Push notification sent")
     return target
 
 

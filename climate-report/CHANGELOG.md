@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.0
+
+- Add secondary day, night, range and year-over-year humidity measurements.
+- Add a browsable archive of saved reports to the Ingress UI.
+- Add Companion App push notifications and a manual push test.
+- Add direct SMTP configuration, automatic delivery and manual test/send buttons.
+- Clarify archive and delivery options in the app configuration.
+
 ## 0.4.1
 
 - Plot daily humidity alongside temperature in every room chart.

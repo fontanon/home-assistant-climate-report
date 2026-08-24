@@ -14,11 +14,29 @@ configuration:
     name: Periodo de comparación
   archive_reports:
     name: Archivar reportes
+    description: Conserva una copia fechada y navegable de cada reporte generado.
   dry_run:
     name: Modo de prueba
     description: Genera el resultado sin enviar correo.
-  notifier:
-    name: Notificador de Home Assistant
+  push_notifier:
+    name: Servicio de notificación push
+    description: Servicio Companion App, por ejemplo notify.mobile_app_pixel_9a_de_felix.
+  email_enabled:
+    name: Activar envío por correo
+  email_to:
+    name: Correo destinatario
+  email_from:
+    name: Correo remitente
+  smtp_host:
+    name: Servidor SMTP
+  smtp_port:
+    name: Puerto SMTP
+  smtp_security:
+    name: Seguridad SMTP
+  smtp_username:
+    name: Usuario SMTP
+  smtp_password:
+    name: Contraseña SMTP
   weather_entity:
     name: Entidad meteorológica
   rooms:

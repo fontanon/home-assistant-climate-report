@@ -28,7 +28,15 @@ class Settings:
     comparison: str
     archive_reports: bool
     dry_run: bool
-    notifier: str
+    push_notifier: str
+    email_enabled: bool
+    email_to: str
+    email_from: str
+    smtp_host: str
+    smtp_port: int
+    smtp_security: str
+    smtp_username: str
+    smtp_password: str
     weather_entity: str
     rooms: tuple[Room, ...]
     outdoor_temperature_entity: str
@@ -55,7 +63,15 @@ def load_settings(path: Path = OPTIONS_PATH) -> Settings:
         comparison=payload.get("comparison", "same_iso_week"),
         archive_reports=bool(payload.get("archive_reports", True)),
         dry_run=bool(payload.get("dry_run", True)),
-        notifier=(payload.get("notifier") or "").strip(),
+        push_notifier=(payload.get("push_notifier") or payload.get("notifier") or "").strip(),
+        email_enabled=bool(payload.get("email_enabled", False)),
+        email_to=(payload.get("email_to") or "").strip(),
+        email_from=(payload.get("email_from") or "").strip(),
+        smtp_host=(payload.get("smtp_host") or "").strip(),
+        smtp_port=int(payload.get("smtp_port", 587)),
+        smtp_security=payload.get("smtp_security", "starttls"),
+        smtp_username=(payload.get("smtp_username") or "").strip(),
+        smtp_password=payload.get("smtp_password") or "",
         weather_entity=(payload.get("weather_entity") or "").strip(),
         rooms=rooms,
         outdoor_temperature_entity=(outdoor.get("temperature_entity") or "").strip(),
@@ -73,3 +89,8 @@ def validate_settings(settings: Settings) -> None:
     for room in settings.rooms:
         if not room.name or not room.temperature_entity:
             raise ValueError("Every room needs a name and temperature entity")
+    if settings.email_enabled:
+        if not settings.email_to or not settings.email_from or not settings.smtp_host:
+            raise ValueError("Email requires recipient, sender and SMTP host")
+        if settings.smtp_security not in {"starttls", "ssl", "none"}:
+            raise ValueError("Unsupported SMTP security mode")
