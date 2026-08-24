@@ -11,7 +11,7 @@ from home_assistant import HomeAssistantClient
 
 def send_email(settings: Settings, html: str, subject: str) -> None:
     if not settings.email_enabled:
-        raise ValueError("Email delivery is not enabled")
+        raise ValueError("activa 'Activar envío por correo' en la configuración del add-on")
     message = EmailMessage()
     message["Subject"] = subject
     message["From"] = settings.email_from

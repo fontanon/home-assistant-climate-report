@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.2
+
+- Add a back arrow from the Ingress UI to the previous Home Assistant page.
+- Explain clearly when email delivery is disabled instead of showing an English error.
+
 ## 0.5.1
 
 - Support both legacy Companion notify actions and modern notify entities.
