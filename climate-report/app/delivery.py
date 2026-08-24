@@ -9,7 +9,13 @@ from config import Settings
 from home_assistant import HomeAssistantClient
 
 
-def send_email(settings: Settings, html: str, subject: str) -> None:
+def send_email(
+    settings: Settings,
+    html: str,
+    subject: str,
+    *,
+    attachment_name: str | None = None,
+) -> None:
     if not settings.email_enabled:
         raise ValueError("activa 'Activar envío por correo' en la configuración del add-on")
     message = EmailMessage()
@@ -18,6 +24,13 @@ def send_email(settings: Settings, html: str, subject: str) -> None:
     message["To"] = settings.email_to
     message.set_content("This climate report includes an HTML version.")
     message.add_alternative(html, subtype="html")
+    if attachment_name:
+        message.add_attachment(
+            html.encode("utf-8"),
+            maintype="text",
+            subtype="html",
+            filename=attachment_name,
+        )
 
     connection: smtplib.SMTP
     if settings.smtp_security == "ssl":

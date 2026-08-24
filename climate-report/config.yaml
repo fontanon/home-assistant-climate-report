@@ -1,5 +1,5 @@
 name: Climate Report
-version: 0.5.2
+version: 0.5.3
 slug: climate_report
 description: Weekly indoor temperature and humidity reports with outdoor context and year-over-year comparisons
 url: https://github.com/fontanon/home-assistant-climate-report

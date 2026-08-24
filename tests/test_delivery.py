@@ -26,13 +26,22 @@ class DeliveryTest(unittest.TestCase):
         connection = MagicMock()
         connection.__enter__.return_value = connection
         with patch("delivery.smtplib.SMTP", return_value=connection) as smtp:
-            send_email(settings, "<p>Report</p>", "Climate Report")
+            send_email(
+                settings,
+                "<p>Report</p>",
+                "Climate Report",
+                attachment_name="climate-report.html",
+            )
         smtp.assert_called_once_with("smtp.example.com", 587, timeout=30)
         connection.starttls.assert_called_once_with()
         connection.login.assert_called_once_with("reports@example.com", "secret")
         message = connection.send_message.call_args.args[0]
         self.assertEqual(message["To"], "felix@example.com")
         self.assertTrue(message.is_multipart())
+        attachments = list(message.iter_attachments())
+        self.assertEqual(len(attachments), 1)
+        self.assertEqual(attachments[0].get_filename(), "climate-report.html")
+        self.assertIn("<p>Report</p>", attachments[0].get_content())
 
     def test_sends_push_through_home_assistant_notify(self) -> None:
         settings = SimpleNamespace(push_notifier="notify.mobile_app_pixel_9a_de_felix")

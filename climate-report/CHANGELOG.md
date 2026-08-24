@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.5.3
+
+- Send the complete Web UI report as the email body instead of the compact summary.
+- Attach the exact generated HTML so it can be opened without email-client styling restrictions.
+
 ## 0.5.2
 
 - Add a back arrow from the Ingress UI to the previous Home Assistant page.
