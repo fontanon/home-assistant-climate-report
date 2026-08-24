@@ -29,12 +29,25 @@ LOGGER = logging.getLogger("climate_report")
 GENERATE_LOCK = threading.Lock()
 
 
-def _report_links(client: HomeAssistantClient) -> tuple[str | None, str | None]:
+def _report_links(client: HomeAssistantClient, configured_base_url: str = "") -> tuple[str | None, str | None]:
     try:
-        return client.get_report_links()
+        return client.get_report_links(configured_base_url)
     except Exception as error:
         LOGGER.warning("Could not resolve report links: %s", error)
         return None, None
+
+
+def _add_email_report_link(html: str, report_url: str | None) -> str:
+    """Add the report CTA to an older stored email that predates link configuration."""
+    if not report_url or report_url in html:
+        return html
+    button = (
+        f'<p style="margin:28px 0;text-align:center"><a href="{escape(report_url)}" '
+        'style="display:inline-block;padding:14px 22px;border-radius:10px;'
+        'background:#226454;color:#ffffff;font-weight:bold;text-decoration:none">'
+        'Abrir último reporte en Home Assistant</a></p>'
+    )
+    return html.replace("</body>", f"{button}</body>")
 
 
 def _viewer_page(message: str = "") -> bytes:
@@ -91,7 +104,7 @@ class ReportHandler(BaseHTTPRequestHandler):
         if path in {"/send-email", "/test-email", "/send-push"}:
             try:
                 settings = load_settings()
-                report_path, _ = _report_links(HomeAssistantClient())
+                report_path, report_url = _report_links(HomeAssistantClient(), settings.home_assistant_url)
                 if path == "/send-push":
                     send_push(
                         settings,
@@ -101,7 +114,11 @@ class ReportHandler(BaseHTTPRequestHandler):
                     )
                     message = "Notificación push enviada"
                 elif path == "/test-email":
-                    send_email(settings, "<p>La configuración de correo de Climate Report funciona correctamente.</p>", "Prueba de Climate Report")
+                    test_html = _add_email_report_link(
+                        "<html><body><p>La configuración de correo de Climate Report funciona correctamente.</p></body></html>",
+                        report_url,
+                    )
+                    send_email(settings, test_html, "Prueba de Climate Report")
                     message = "Correo de prueba enviado"
                 else:
                     target = DEFAULT_REPORT_DIR / "latest-email.html"
@@ -110,7 +127,7 @@ class ReportHandler(BaseHTTPRequestHandler):
                         raise ValueError("Todavía no hay un reporte para enviar")
                     send_email(
                         settings,
-                        target.read_text(encoding="utf-8"),
+                        _add_email_report_link(target.read_text(encoding="utf-8"), report_url),
                         "Climate Report · último reporte",
                         attachment_name="climate-report-ultimo.html",
                         attachment_html=full_target.read_text(encoding="utf-8"),
@@ -201,7 +218,7 @@ def generate(command: dict[str, object] | None = None) -> Path:
     )
     LOGGER.info("Collecting statistics for %s", periods.current.label)
     client = HomeAssistantClient()
-    report_path, report_url = _report_links(client)
+    report_path, report_url = _report_links(client, settings.home_assistant_url)
     report = build_report(client, settings, periods, generated_at=generated_at)
     html = render_full_report(report, settings.language)
     email_html = render_email_report(report, settings.language, report_url=report_url)

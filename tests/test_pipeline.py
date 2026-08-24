@@ -74,6 +74,7 @@ class PipelineTest(unittest.TestCase):
             archive_reports=True,
             dry_run=True,
             push_notifier="",
+            home_assistant_url="",
             email_enabled=False,
             email_to="",
             email_from="",

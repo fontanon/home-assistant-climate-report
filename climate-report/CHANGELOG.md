@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.6
+
+- Add a configurable Home Assistant public URL so email reports always include a direct button to the app Web UI.
+- Reuse the same report destination for email and Companion push notifications.
+- Add the report button to previously generated emails when they are sent manually.
+
 ## 0.5.5
 
 - Open the app's latest report when tapping a Companion push notification.

@@ -29,6 +29,7 @@ class Settings:
     archive_reports: bool
     dry_run: bool
     push_notifier: str
+    home_assistant_url: str
     email_enabled: bool
     email_to: str
     email_from: str
@@ -64,6 +65,7 @@ def load_settings(path: Path = OPTIONS_PATH) -> Settings:
         archive_reports=bool(payload.get("archive_reports", True)),
         dry_run=bool(payload.get("dry_run", True)),
         push_notifier=(payload.get("push_notifier") or payload.get("notifier") or "").strip(),
+        home_assistant_url=(payload.get("home_assistant_url") or "").strip().rstrip("/"),
         email_enabled=bool(payload.get("email_enabled", False)),
         email_to=(payload.get("email_to") or "").strip(),
         email_from=(payload.get("email_from") or "").strip(),

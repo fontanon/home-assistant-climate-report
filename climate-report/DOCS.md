@@ -21,6 +21,7 @@ comparison: same_iso_week
 archive_reports: true
 dry_run: true
 push_notifier: notify.mobile_app_your_phone
+home_assistant_url: https://your-instance.ui.nabu.casa
 email_enabled: false
 email_to: you@example.com
 email_from: reports@example.com

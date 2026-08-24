@@ -21,6 +21,9 @@ configuration:
   push_notifier:
     name: Push notification service
     description: Companion App service, for example notify.mobile_app_pixel_9a_de_felix.
+  home_assistant_url:
+    name: Home Assistant public URL
+    description: Base HTTPS URL without a trailing path. Used by the email button, for example https://your-instance.ui.nabu.casa.
   email_enabled:
     name: Enable email delivery
   email_to:

@@ -45,14 +45,14 @@ class HomeAssistantClient:
             detail = error.read().decode("utf-8", errors="replace")
             raise RuntimeError(f"Home Assistant API returned HTTP {error.code}: {detail}") from error
 
-    def get_report_links(self) -> tuple[str, str | None]:
+    def get_report_links(self, configured_base_url: str = "") -> tuple[str, str | None]:
         addon = self.supervisor_request("GET", "addons/self/info").get("data", {})
         slug = addon.get("slug")
         if not slug:
             raise RuntimeError("Supervisor did not return the app slug")
         path = f"/app/{slug}"
         core_config = self.request("GET", "config")
-        base_url = core_config.get("external_url") or core_config.get("internal_url")
+        base_url = configured_base_url or core_config.get("external_url") or core_config.get("internal_url")
         absolute = f"{str(base_url).rstrip('/')}{path}" if base_url else None
         return path, absolute
 
