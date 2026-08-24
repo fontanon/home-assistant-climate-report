@@ -21,9 +21,19 @@ class HomeAssistantClient:
         }
 
     def request(self, method: str, path: str, payload: dict[str, Any] | None = None) -> Any:
+        return self._request_url(method, f"{self.base_url}/{path.lstrip('/')}", payload)
+
+    def supervisor_request(
+        self, method: str, path: str, payload: dict[str, Any] | None = None
+    ) -> Any:
+        return self._request_url(method, f"http://supervisor/{path.lstrip('/')}", payload)
+
+    def _request_url(
+        self, method: str, url: str, payload: dict[str, Any] | None = None
+    ) -> Any:
         data = json.dumps(payload).encode() if payload is not None else None
         request = urllib.request.Request(
-            f"{self.base_url}/{path.lstrip('/')}",
+            url,
             data=data,
             headers=self.headers,
             method=method,
@@ -34,6 +44,17 @@ class HomeAssistantClient:
         except urllib.error.HTTPError as error:
             detail = error.read().decode("utf-8", errors="replace")
             raise RuntimeError(f"Home Assistant API returned HTTP {error.code}: {detail}") from error
+
+    def get_report_links(self) -> tuple[str, str | None]:
+        addon = self.supervisor_request("GET", "addons/self/info").get("data", {})
+        slug = addon.get("slug")
+        if not slug:
+            raise RuntimeError("Supervisor did not return the app slug")
+        path = f"/app/{slug}"
+        core_config = self.request("GET", "config")
+        base_url = core_config.get("external_url") or core_config.get("internal_url")
+        absolute = f"{str(base_url).rstrip('/')}{path}" if base_url else None
+        return path, absolute
 
     def call_service(
         self, domain: str, service: str, data: dict[str, Any], *, return_response: bool = False

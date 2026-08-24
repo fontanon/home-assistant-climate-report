@@ -104,6 +104,7 @@ def render_email_report(
     language: str,
     *,
     template_dir: Path = TEMPLATE_DIR,
+    report_url: str | None = None,
 ) -> str:
     text = COPY.get(language, COPY["en"])
     valid_temps = [room.temperature.overall.mean for room in report.rooms if room.temperature.overall]
@@ -142,6 +143,7 @@ def render_email_report(
       <h2 style="margin:32px 0 14px;color:#17322d;font-family:Georgia,serif;font-size:30px;font-weight:normal">{escape(text['rooms'])}</h2>
       {rooms}
       <div style="margin-top:24px;padding:20px;border:1px solid #dfe4dc;border-radius:16px;background:#fffdf8;color:#64746f;font-size:12px"><b style="color:#17322d">{escape(text['quality'])}</b><br>{'<br>'.join(escape(item) for item in report.warnings) or 'Sin avisos'}<br>{escape(text['comparison'])}: {escape(report.comparison_label or text['no_comparison'])}</div>
+      {f'<p style="margin:28px 0;text-align:center"><a href="{escape(report_url)}" style="display:inline-block;padding:14px 22px;border-radius:10px;background:#226454;color:#ffffff;font-weight:bold;text-decoration:none">Abrir último reporte en Home Assistant</a></p>' if report_url else ''}
     """
     template = Template((template_dir / "email.html").read_text(encoding="utf-8"))
     return template.safe_substitute(language=language, title=text["title"], summary=summary)

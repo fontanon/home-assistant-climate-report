@@ -29,6 +29,14 @@ LOGGER = logging.getLogger("climate_report")
 GENERATE_LOCK = threading.Lock()
 
 
+def _report_links(client: HomeAssistantClient) -> tuple[str | None, str | None]:
+    try:
+        return client.get_report_links()
+    except Exception as error:
+        LOGGER.warning("Could not resolve report links: %s", error)
+        return None, None
+
+
 def _viewer_page(message: str = "") -> bytes:
     today = date.today()
     start = today - timedelta(days=7)
@@ -83,8 +91,14 @@ class ReportHandler(BaseHTTPRequestHandler):
         if path in {"/send-email", "/test-email", "/send-push"}:
             try:
                 settings = load_settings()
+                report_path, _ = _report_links(HomeAssistantClient())
                 if path == "/send-push":
-                    send_push(settings, "Climate Report", "La notificación de Climate Report funciona correctamente.")
+                    send_push(
+                        settings,
+                        "Climate Report",
+                        "Toca para abrir el último reporte.",
+                        report_path=report_path,
+                    )
                     message = "Notificación push enviada"
                 elif path == "/test-email":
                     send_email(settings, "<p>La configuración de correo de Climate Report funciona correctamente.</p>", "Prueba de Climate Report")
@@ -186,11 +200,11 @@ def generate(command: dict[str, object] | None = None) -> Path:
         end_date=end_date,
     )
     LOGGER.info("Collecting statistics for %s", periods.current.label)
-    report = build_report(
-        HomeAssistantClient(), settings, periods, generated_at=generated_at
-    )
+    client = HomeAssistantClient()
+    report_path, report_url = _report_links(client)
+    report = build_report(client, settings, periods, generated_at=generated_at)
     html = render_full_report(report, settings.language)
-    email_html = render_email_report(report, settings.language)
+    email_html = render_email_report(report, settings.language, report_url=report_url)
     target = save_report(report, html, archive=settings.archive_reports)
     email_target = DEFAULT_REPORT_DIR / "latest-email.html"
     email_target.write_text(email_html, encoding="utf-8")
@@ -208,7 +222,12 @@ def generate(command: dict[str, object] | None = None) -> Path:
             )
             LOGGER.info("Report sent by email")
         if settings.push_notifier:
-            send_push(settings, "Climate Report", f"Reporte generado: {report.period_label}")
+            send_push(
+                settings,
+                "Climate Report",
+                f"Reporte generado: {report.period_label}",
+                report_path=report_path,
+            )
             LOGGER.info("Push notification sent")
     return target
 

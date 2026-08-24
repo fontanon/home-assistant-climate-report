@@ -46,7 +46,13 @@ def send_email(
         connection.send_message(message)
 
 
-def send_push(settings: Settings, title: str, message: str) -> None:
+def send_push(
+    settings: Settings,
+    title: str,
+    message: str,
+    *,
+    report_path: str | None = None,
+) -> None:
     destination = settings.push_notifier
     service = destination.removeprefix("notify.")
     if not service:
@@ -57,8 +63,11 @@ def send_push(settings: Settings, title: str, message: str) -> None:
         (item.get("services", {}) for item in services if item.get("domain") == "notify"),
         {},
     )
+    payload = {"title": title, "message": message}
+    if report_path:
+        payload["data"] = {"url": report_path, "clickAction": report_path}
     if service in notify_services:
-        client.call_service("notify", service, {"title": title, "message": message})
+        client.call_service("notify", service, payload)
         return
     try:
         client.request("GET", f"states/{destination}")
@@ -69,5 +78,5 @@ def send_push(settings: Settings, title: str, message: str) -> None:
     client.call_service(
         "notify",
         "send_message",
-        {"entity_id": destination, "title": title, "message": message},
+        {"entity_id": destination, **payload},
     )

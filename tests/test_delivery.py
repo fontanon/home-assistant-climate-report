@@ -65,7 +65,12 @@ class DeliveryTest(unittest.TestCase):
             {"entity_id": "notify.mobile_app_pixel_9a_de_felix"},
         ]
         with patch("delivery.HomeAssistantClient", return_value=client):
-            send_push(settings, "Climate Report", "Ready")
+            send_push(
+                settings,
+                "Climate Report",
+                "Ready",
+                report_path="/app/9d838440_climate_report",
+            )
         client.call_service.assert_called_once_with(
             "notify",
             "send_message",
@@ -73,6 +78,10 @@ class DeliveryTest(unittest.TestCase):
                 "entity_id": "notify.mobile_app_pixel_9a_de_felix",
                 "title": "Climate Report",
                 "message": "Ready",
+                "data": {
+                    "url": "/app/9d838440_climate_report",
+                    "clickAction": "/app/9d838440_climate_report",
+                },
             },
         )
 

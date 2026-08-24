@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.5
+
+- Open the app's latest report when tapping a Companion push notification.
+- Add an email button linking to the latest report through Home Assistant's external URL.
+- Resolve the installed app slug dynamically through Supervisor.
+
 ## 0.5.4
 
 - Replace browser CSS with a complete Gmail-compatible table layout and inline styles.

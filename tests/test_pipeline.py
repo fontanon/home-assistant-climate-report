@@ -108,12 +108,18 @@ class PipelineTest(unittest.TestCase):
         self.assertEqual(len(report.rooms[0].temperature.daily), 7)
 
         html = render_full_report(report, "es", template_dir=TEMPLATE_PATH)
-        email = render_email_report(report, "es", template_dir=TEMPLATE_PATH)
+        email = render_email_report(
+            report,
+            "es",
+            template_dir=TEMPLATE_PATH,
+            report_url="https://example.ui.nabu.casa/app/climate_report",
+        )
         self.assertIn("Living room", html)
         self.assertIn("2026-05-04", html)
         self.assertIn("temperature-line", html)
         self.assertIn("humidity-line", html)
         self.assertIn("Living room", email)
+        self.assertIn("https://example.ui.nabu.casa/app/climate_report", email)
         self.assertNotIn("{{", html)
 
         empty_temperature = VariableReport(
