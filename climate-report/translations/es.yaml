@@ -44,5 +44,16 @@ configuration:
     name: Entidad meteorológica
   rooms:
     name: Habitaciones
+    description: Sensores y espacios mostrados en el reporte. Activa «Excluir del resumen» para equipos como termos.
+    fields:
+      name:
+        name: Nombre
+      temperature_entity:
+        name: Sensor de temperatura
+      humidity_entity:
+        name: Sensor de humedad
+      exclude_from_summary:
+        name: Excluir del resumen general
+        description: Se muestra en el reporte, pero no afecta a medias, picos ni cobertura global.
   outdoor:
     name: Referencia exterior

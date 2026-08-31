@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.0
+
+- Allow individual sensors, such as a water heater, to remain visible while being excluded from whole-home averages, peaks and coverage.
+- Add compact value labels to every temperature and humidity chart vertex.
+- Label the minimum and maximum of both chart scales directly on the vertical edges.
+
 ## 0.5.6
 
 - Add a configurable Home Assistant public URL so email reports always include a direct button to the app Web UI.

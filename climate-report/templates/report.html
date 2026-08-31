@@ -11,6 +11,10 @@
     .room-body polyline{fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
     .room-body .temperature-line{stroke:var(--green)}
     .room-body .humidity-line{stroke:var(--blue);stroke-dasharray:6 5}
+    .room-body svg{height:112px;overflow:visible}
+    .chart-point.temperature{fill:var(--green)}.chart-point.humidity{fill:var(--blue)}
+    .chart-label,.axis-label{font:7px Inter,ui-sans-serif,system-ui,sans-serif;opacity:.64;paint-order:stroke;stroke:var(--card);stroke-width:2px;stroke-linejoin:round}
+    .chart-label.temperature,.axis-label.temperature{fill:var(--green)}.chart-label.humidity,.axis-label.humidity{fill:var(--blue)}
     .chart-legend{display:flex;gap:16px;color:var(--muted);font-size:10px}
     .chart-legend span:before{display:inline-block;width:18px;height:3px;margin-right:6px;vertical-align:middle;background:var(--green);content:""}
     .chart-legend .humidity-key:before{background:var(--blue)}

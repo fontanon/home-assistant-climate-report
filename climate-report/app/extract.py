@@ -55,6 +55,7 @@ def build_report(
             name=room.name,
             temperature=current[room.temperature_entity],
             humidity=current.get(room.humidity_entity) if room.humidity_entity else None,
+            include_in_summary=room.include_in_summary,
             comparison_temperature=previous.get(room.temperature_entity),
             comparison_humidity=previous.get(room.humidity_entity) if room.humidity_entity else None,
         )

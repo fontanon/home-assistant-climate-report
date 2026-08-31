@@ -44,5 +44,16 @@ configuration:
     name: Weather entity
   rooms:
     name: Rooms
+    description: Sensors and spaces shown in the report. Enable “Exclude from summary” for equipment such as water heaters.
+    fields:
+      name:
+        name: Name
+      temperature_entity:
+        name: Temperature sensor
+      humidity_entity:
+        name: Humidity sensor
+      exclude_from_summary:
+        name: Exclude from home summary
+        description: Still shown in the report, but omitted from global means, peaks and coverage.
   outdoor:
     name: Outdoor reference

@@ -31,6 +31,7 @@ COPY = {
         "no_comparison": "Sin datos comparables",
         "generated": "Generado",
         "no_temperature": "Sin datos de temperatura",
+        "excluded": "Fuera del resumen general",
     },
     "en": {
         "title": "Home climate",
@@ -49,6 +50,7 @@ COPY = {
         "no_comparison": "No comparable data",
         "generated": "Generated",
         "no_temperature": "No temperature data",
+        "excluded": "Excluded from home summary",
     },
 }
 
@@ -60,20 +62,21 @@ def render_full_report(
     template_dir: Path = TEMPLATE_DIR,
 ) -> str:
     text = COPY.get(language, COPY["en"])
-    valid_temps = [room.temperature.overall.mean for room in report.rooms if room.temperature.overall]
+    summary_rooms = [room for room in report.rooms if room.include_in_summary]
+    valid_temps = [room.temperature.overall.mean for room in summary_rooms if room.temperature.overall]
     valid_humidity = [
         room.humidity.overall.mean
-        for room in report.rooms
+        for room in summary_rooms
         if room.humidity and room.humidity.overall
     ]
     indoor_mean = fmean(valid_temps) if valid_temps else None
     indoor_humidity = fmean(valid_humidity) if valid_humidity else None
     peak_room = max(
-        (room for room in report.rooms if room.temperature.overall),
+        (room for room in summary_rooms if room.temperature.overall),
         key=lambda item: item.temperature.overall.maximum,  # type: ignore[union-attr]
         default=None,
     )
-    coverage = fmean(room.temperature.coverage for room in report.rooms) if report.rooms else 0
+    coverage = fmean(room.temperature.coverage for room in summary_rooms) if summary_rooms else 0
     outdoor = report.outdoor_temperature.overall
 
     lead = _lead(report, indoor_mean, outdoor.mean if outdoor else None, language)
@@ -107,15 +110,16 @@ def render_email_report(
     report_url: str | None = None,
 ) -> str:
     text = COPY.get(language, COPY["en"])
-    valid_temps = [room.temperature.overall.mean for room in report.rooms if room.temperature.overall]
-    valid_humidity = [room.humidity.overall.mean for room in report.rooms if room.humidity and room.humidity.overall]
+    summary_rooms = [room for room in report.rooms if room.include_in_summary]
+    valid_temps = [room.temperature.overall.mean for room in summary_rooms if room.temperature.overall]
+    valid_humidity = [room.humidity.overall.mean for room in summary_rooms if room.humidity and room.humidity.overall]
     indoor_mean = fmean(valid_temps) if valid_temps else None
     indoor_humidity = fmean(valid_humidity) if valid_humidity else None
-    coverage = fmean(room.temperature.coverage for room in report.rooms) if report.rooms else 0
+    coverage = fmean(room.temperature.coverage for room in summary_rooms) if summary_rooms else 0
     outdoor = report.outdoor_temperature.overall
     lead = _lead(report, indoor_mean, outdoor.mean if outdoor else None, language)
     peak = max(
-        (room for room in report.rooms if room.temperature.overall),
+        (room for room in summary_rooms if room.temperature.overall),
         key=lambda room: room.temperature.overall.maximum,  # type: ignore[union-attr]
         default=None,
     )
@@ -171,7 +175,7 @@ def _email_room_card(room: RoomReport, text: dict[str, str]) -> str:
     daily = _email_daily_row(temperature, humidity)
     return f"""
       <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-bottom:16px;border:1px solid #dfe4dc;border-radius:16px;background:#fffdf8">
-        <tr><td width="210" valign="top" style="padding:20px;background:#edf3ed"><span style="color:#64746f;font-size:9px">Temp. {temperature.coverage:.0%}{f' · Hum. {humidity.coverage:.0%}' if humidity else ''}</span><h3 style="margin:6px 0;color:#17322d;font-family:Georgia,serif;font-size:25px;font-weight:normal">{escape(room.name)}</h3><b style="color:#17322d;font-family:Georgia,serif;font-size:27px;font-weight:normal">{escape(temperature_value)}</b><p style="margin:7px 0 0;color:#397e91;font-size:12px">{escape(text['humidity'])}: {escape(humidity_value)}</p></td>
+        <tr><td width="210" valign="top" style="padding:20px;background:#edf3ed"><span style="color:#64746f;font-size:9px">Temp. {temperature.coverage:.0%}{f' · Hum. {humidity.coverage:.0%}' if humidity else ''}{f' · {escape(text["excluded"])}' if not room.include_in_summary else ''}</span><h3 style="margin:6px 0;color:#17322d;font-family:Georgia,serif;font-size:25px;font-weight:normal">{escape(room.name)}</h3><b style="color:#17322d;font-family:Georgia,serif;font-size:27px;font-weight:normal">{escape(temperature_value)}</b><p style="margin:7px 0 0;color:#397e91;font-size:12px">{escape(text['humidity'])}: {escape(humidity_value)}</p></td>
         <td valign="top" style="padding:18px"><div style="margin-bottom:12px;color:#226454;font-family:monospace;font-size:18px;letter-spacing:2px">Temp. {_email_sparkline(temperature)}</div>{f'<div style="margin-bottom:12px;color:#397e91;font-family:monospace;font-size:18px;letter-spacing:2px">Hum. {_email_sparkline(humidity)}</div>' if humidity else ''}<table role="presentation" width="100%" cellspacing="4" cellpadding="0"><tr>{_email_stat(text['day'], _fmt_summary(temperature.daytime))}{_email_stat(text['night'], _fmt_summary(temperature.nighttime))}{_email_stat(text['comparison'], text['no_comparison'] if comparison_delta is None else f'{comparison_delta:+.1f} °C')}</tr>{f'<tr>{_email_stat("Hum. día", _fmt_summary_unit(humidity.daytime, "%", 0))}{_email_stat("Hum. noche", _fmt_summary_unit(humidity.nighttime, "%", 0))}{_email_stat("Hum. comp.", text["no_comparison"] if humidity_delta is None else f"{humidity_delta:+.0f} pp")}</tr>' if humidity and humidity.overall else ''}</table></td></tr>
         <tr><td colspan="2" style="padding:10px 14px;border-top:1px solid #dfe4dc">{daily}</td></tr>
       </table>"""
@@ -227,7 +231,7 @@ def _room_card(room: RoomReport, text: dict[str, str]) -> str:
           </div>"""
     return f"""
       <article class="room card">
-        <div class="room-intro"><span class="tag">Temp. {temperature.coverage:.0%}{humidity_coverage}</span><h3>{escape(room.name)}</h3><div class="main-value">{escape(temperature_text)}</div><p>{escape(text['humidity'])}: {escape(humidity_text)}</p></div>
+        <div class="room-intro"><span class="tag">Temp. {temperature.coverage:.0%}{humidity_coverage}</span>{f'<span class="tag">{escape(text["excluded"])}</span>' if not room.include_in_summary else ''}<h3>{escape(room.name)}</h3><div class="main-value">{escape(temperature_text)}</div><p>{escape(text['humidity'])}: {escape(humidity_text)}</p></div>
         <div class="room-body">{_sparkline(temperature, humidity, text)}<div class="ranges"><div><span>{escape(text['day'])}</span><b>{_fmt_summary(day)}</b></div><div><span>{escape(text['night'])}</span><b>{_fmt_summary(night)}</b></div><div><span>{escape(text['comparison'])}</span><b>{escape(delta_text)}</b></div></div>{humidity_stats}</div>
         <div class="daily-wrap">{_daily_table(temperature, humidity)}</div>
       </article>
@@ -262,32 +266,52 @@ def _sparkline(temperature: VariableReport, humidity: VariableReport | None, tex
     days = sorted(set(temperature_values) | set(humidity_values))
     if len(days) < 2:
         return ""
-    temperature_points = _series_points(days, temperature_values)
-    humidity_points = _series_points(days, humidity_values)
-    lines = (f"<polyline class='temperature-line' points='{temperature_points}'/>" if temperature_points else "") + (f"<polyline class='humidity-line' points='{humidity_points}'/>" if humidity_points else "")
+    temperature_chart = _series_chart(days, temperature_values, "°C", "temperature", "left")
+    humidity_chart = _series_chart(days, humidity_values, "%", "humidity", "right")
+    lines = temperature_chart + humidity_chart
     legend = "<div class='chart-legend'>"
-    if temperature_points:
+    if temperature_chart:
         legend += "<span class='temperature-key'>Temperatura</span>"
-    if humidity_points:
+    if humidity_chart:
         legend += f"<span class='humidity-key'>{escape(text['humidity'])}</span>"
     legend += "</div>"
-    return f"<div class='chart'>{legend}<svg viewBox='0 0 300 80' role='img' aria-label='Daily temperature and humidity means'><line x1='10' y1='65' x2='290' y2='65'/>{lines}</svg></div>"
+    return f"<div class='chart'>{legend}<svg viewBox='0 0 340 100' role='img' aria-label='Daily temperature and humidity means'><line x1='34' y1='76' x2='306' y2='76'/>{lines}</svg></div>"
 
 
-def _series_points(days: list[object], values: dict[object, float]) -> str:
+def _series_chart(
+    days: list[object],
+    values: dict[object, float],
+    unit: str,
+    css_class: str,
+    axis: str,
+) -> str:
     present = list(values.values())
     if len(present) < 2:
         return ""
     low, high = min(present), max(present)
     span = high - low or 1.0
-    points = []
+    points: list[tuple[float, float, float]] = []
     for index, day in enumerate(days):
         if day not in values:
             continue
-        x = 10 + index * (280 / (len(days) - 1))
-        y = 65 - ((values[day] - low) / span) * 48
-        points.append(f"{x:.1f},{y:.1f}")
-    return " ".join(points)
+        x = 34 + index * (272 / (len(days) - 1))
+        y = 76 - ((values[day] - low) / span) * 54
+        points.append((x, y, values[day]))
+    polyline = " ".join(f"{x:.1f},{y:.1f}" for x, y, _ in points)
+    label_offset = -7 if css_class == "temperature" else 12
+    digits = 1 if unit == "°C" else 0
+    vertices = "".join(
+        f"<circle class='chart-point {css_class}' cx='{x:.1f}' cy='{y:.1f}' r='2.2'/>"
+        f"<text class='chart-label {css_class}' x='{x:.1f}' y='{y + label_offset:.1f}' text-anchor='middle'>{value:.{digits}f}{unit}</text>"
+        for x, y, value in points
+    )
+    axis_x = 30 if axis == "left" else 310
+    anchor = "end" if axis == "left" else "start"
+    extrema = (
+        f"<text class='axis-label {css_class}' x='{axis_x}' y='25' text-anchor='{anchor}'>{high:.{digits}f}{unit}</text>"
+        f"<text class='axis-label {css_class}' x='{axis_x}' y='78' text-anchor='{anchor}'>{low:.{digits}f}{unit}</text>"
+    )
+    return f"<polyline class='{css_class}-line' points='{polyline}'/>{vertices}{extrema}"
 
 
 def _fmt_range(summary: object) -> str:

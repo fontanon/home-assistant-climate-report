@@ -35,6 +35,10 @@ rooms:
   - name: Living room
     temperature_entity: sensor.living_room_temperature
     humidity_entity: sensor.living_room_humidity
+    exclude_from_summary: false
+  - name: Water heater
+    temperature_entity: sensor.water_heater_temperature
+    exclude_from_summary: true
 outdoor:
   temperature_entity: sensor.outdoor_temperature
   humidity_entity: sensor.outdoor_humidity

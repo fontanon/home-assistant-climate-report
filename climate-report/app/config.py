@@ -16,6 +16,7 @@ class Room:
     name: str
     temperature_entity: str
     humidity_entity: str | None = None
+    include_in_summary: bool = True
 
 
 @dataclass(frozen=True)
@@ -51,6 +52,7 @@ def load_settings(path: Path = OPTIONS_PATH) -> Settings:
             name=item["name"].strip(),
             temperature_entity=item["temperature_entity"].strip(),
             humidity_entity=(item.get("humidity_entity") or "").strip() or None,
+            include_in_summary=not bool(item.get("exclude_from_summary", False)),
         )
         for item in payload.get("rooms", [])
     )

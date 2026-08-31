@@ -31,6 +31,7 @@ class RoomReport:
     name: str
     temperature: VariableReport
     humidity: VariableReport | None
+    include_in_summary: bool = True
     comparison_temperature: VariableReport | None = None
     comparison_humidity: VariableReport | None = None
 

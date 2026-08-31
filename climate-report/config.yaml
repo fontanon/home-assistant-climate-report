@@ -1,5 +1,5 @@
 name: Climate Report
-version: 0.5.6
+version: 0.6.0
 slug: climate_report
 description: Weekly indoor temperature and humidity reports with outdoor context and year-over-year comparisons
 url: https://github.com/fontanon/home-assistant-climate-report
@@ -66,6 +66,7 @@ schema:
     - name: str
       temperature_entity: str
       humidity_entity: str?
+      exclude_from_summary: bool?
   outdoor:
     temperature_entity: str
     humidity_entity: str?

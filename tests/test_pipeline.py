@@ -16,6 +16,7 @@ sys.path.insert(0, str(APP_PATH))
 from archive import save_report  # noqa: E402
 from config import Room, Settings  # noqa: E402
 from extract import build_report  # noqa: E402
+from metrics import Summary  # noqa: E402
 from periods import resolve_periods  # noqa: E402
 from render import render_email_report, render_full_report  # noqa: E402
 from report import VariableReport  # noqa: E402
@@ -119,6 +120,8 @@ class PipelineTest(unittest.TestCase):
         self.assertIn("2026-05-04", html)
         self.assertIn("temperature-line", html)
         self.assertIn("humidity-line", html)
+        self.assertIn("chart-label temperature", html)
+        self.assertIn("axis-label humidity", html)
         self.assertIn("Living room", email)
         self.assertIn("https://example.ui.nabu.casa/app/climate_report", email)
         self.assertNotIn("{{", html)
@@ -139,6 +142,25 @@ class PipelineTest(unittest.TestCase):
         self.assertIn("Sin datos de temperatura", humidity_only_html)
         self.assertIn("humidity-line", humidity_only_html)
         self.assertIn("Humedad: 59 %", humidity_only_html)
+
+        heater_temperature = replace(
+            report.rooms[0].temperature,
+            overall=Summary(mean=70.0, minimum=55.0, maximum=80.0, samples=168),
+        )
+        heater = replace(
+            report.rooms[0],
+            name="Termo",
+            temperature=heater_temperature,
+            include_in_summary=False,
+        )
+        report_with_heater = replace(report, rooms=(report.rooms[0], heater))
+        heater_html = render_full_report(
+            report_with_heater, "es", template_dir=TEMPLATE_PATH
+        )
+        self.assertIn("Termo", heater_html)
+        self.assertIn("Fuera del resumen general", heater_html)
+        self.assertIn("1 rooms", heater_html)
+        self.assertNotIn("75.0 °C", heater_html)
 
         with TemporaryDirectory() as temporary:
             target = save_report(report, html, report_dir=Path(temporary))
