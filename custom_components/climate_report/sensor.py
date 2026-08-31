@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import datetime
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorEntityDescription
 from homeassistant.const import PERCENTAGE, UnitOfTemperature
@@ -35,6 +36,8 @@ class ClimateReportSensor(ClimateReportEntity, SensorEntity):
         value = self.summary.get(self.entity_description.summary_key)
         if self.entity_description.key == "coverage" and value is not None:
             return round(float(value) * 100, 1)
+        if self.entity_description.key == "last_report" and value is not None:
+            return datetime.fromisoformat(value)
         return value
 
     @property
