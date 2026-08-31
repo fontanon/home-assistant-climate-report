@@ -7,7 +7,7 @@ from typing import Any
 from homeassistant import config_entries
 from homeassistant.helpers.service_info.hassio import HassioServiceInfo
 
-from .const import DOMAIN
+from .const import ADDON_SLUG, DOMAIN
 
 
 class ClimateReportConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -36,4 +36,9 @@ class ClimateReportConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_user(self, user_input: dict[str, Any] | None = None):
         if self._async_current_entries():
             return self.async_abort(reason="single_instance_allowed")
-        return self.async_abort(reason="install_addon_first")
+        await self.async_set_unique_id(ADDON_SLUG)
+        self._abort_if_unique_id_configured()
+        return self.async_create_entry(
+            title="Climate Report",
+            data={"addon_slug": ADDON_SLUG},
+        )
