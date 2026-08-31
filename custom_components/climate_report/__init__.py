@@ -7,6 +7,7 @@ import json
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import Event, HomeAssistant
 from homeassistant.helpers.dispatcher import async_dispatcher_send
+from homeassistant.helpers.event import async_call_later
 
 from .const import DOMAIN, EVENT_REPORT_GENERATED, SIGNAL_UPDATE
 
@@ -22,15 +23,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     entry.async_on_unload(hass.bus.async_listen(EVENT_REPORT_GENERATED, receive_report))
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-    await hass.services.async_call(
-        "hassio",
-        "addon_stdin",
-        {
-            "addon": entry.data["addon_slug"],
-            "input": json.dumps({"command": "publish_summary"}),
-        },
-        blocking=False,
-    )
+    async def publish_summary(_now=None) -> None:
+        await hass.services.async_call(
+            "hassio",
+            "addon_stdin",
+            {
+                "addon": entry.data["addon_slug"],
+                "input": json.dumps({"command": "publish_summary"}),
+            },
+            blocking=False,
+        )
+
+    await publish_summary()
+    entry.async_on_unload(async_call_later(hass, 15, publish_summary))
     return True
 
 
