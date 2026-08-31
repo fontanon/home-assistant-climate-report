@@ -22,6 +22,7 @@ from extract import build_report
 from home_assistant import HomeAssistantClient
 from periods import resolve_periods
 from render import render_email_report, render_full_report
+from summary import build_summary, load_summary, save_summary
 
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -75,12 +76,31 @@ frame.addEventListener('load',()=>{{fitReport();try{{new ResizeObserver(fitRepor
     return html.encode("utf-8")
 
 
+def _summary_page() -> bytes:
+    data = load_summary() or {}
+    def number(key: str, unit: str, digits: int = 1) -> str:
+        value = data.get(key)
+        return "—" if value is None else f"{float(value):.{digits}f} {unit}"
+    def delta(key: str, unit: str, digits: int = 1) -> str:
+        value = data.get(key)
+        return "Sin comparativa" if value is None else f"{float(value):+.{digits}f} {unit}"
+    warnings = len(data.get("warnings", []))
+    report_path = escape(str(data.get("report_path") or "./"))
+    html = f"""<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Resumen climático</title><style>
+body{{margin:0;background:#f4f1e9;color:#17322d;font-family:system-ui,sans-serif}}main{{width:min(720px,calc(100% - 28px));margin:30px auto}}.card{{padding:24px;border-radius:22px;background:#fffdf8;box-shadow:0 14px 40px #17322d14}}.top,.metrics,.compare,footer{{display:flex;justify-content:space-between;gap:14px}}h1{{margin:5px 0;font:500 38px Georgia,serif}}.eyebrow{{color:#226454;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}}.muted{{color:#64746f;font-size:12px}}.metrics,.compare{{margin-top:22px}}.metric{{flex:1}}.metric b{{display:block;font:500 32px Georgia,serif}}.compare div{{flex:1;padding:12px;border-radius:12px;background:#edf4f5}}.compare b,.compare span{{display:block}}.compare span{{color:#64746f;font-size:10px}}footer{{align-items:center;margin-top:22px;padding-top:16px;border-top:1px solid #dfe4dc}}a{{padding:11px 15px;border-radius:10px;background:#226454;color:white;text-decoration:none;font-weight:700}}@media(max-width:520px){{.metrics,.compare{{display:grid;grid-template-columns:1fr 1fr}}}}
+</style></head><body><main><article class="card"><div class="top"><div><div class="eyebrow">Climate Report</div><h1>Clima semanal</h1><div class="muted">{escape(str(data.get('period') or 'Sin informe generado'))}</div></div><div class="muted">{float(data.get('coverage', 0)):.0%} datos</div></div><div class="metrics"><div class="metric"><b>{number('mean_temperature','°C')}</b><span class="muted">Temperatura media</span></div><div class="metric"><b>{number('mean_humidity','%',0)}</b><span class="muted">Humedad media</span></div></div><div class="compare"><div><b>{delta('temperature_year_delta','°C')}</b><span>Temperatura interanual</span></div><div><b>{delta('humidity_year_delta','pp',0)}</b><span>Humedad interanual</span></div></div><footer><span class="muted">{'Sin avisos' if not warnings else f'{warnings} avisos'}</span><a href="{report_path}">Ver informe →</a></footer></article></main></body></html>"""
+    return html.encode("utf-8")
+
+
 class ReportHandler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:
         parsed = urlparse(self.path)
         if parsed.path.rstrip("/") in ("", "/"):
             message = parse_qs(parsed.query).get("message", [""])[0]
             self._send_html(_viewer_page(message))
+            return
+        if parsed.path.rstrip("/") == "/summary":
+            self._send_html(_summary_page())
             return
         if parsed.path.startswith("/archive/"):
             name = parsed.path.rsplit("/", 1)[-1]
@@ -91,6 +111,18 @@ class ReportHandler(BaseHTTPRequestHandler):
             self._send_html(target.read_bytes())
             return
         if parsed.path.rstrip("/") != "/report":
+            if parsed.path.rstrip("/") == "/api/summary":
+                summary = load_summary()
+                if summary is None:
+                    self.send_error(404, "No report has been generated yet")
+                    return
+                payload = json.dumps(summary, ensure_ascii=False).encode("utf-8")
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json; charset=utf-8")
+                self.send_header("Content-Length", str(len(payload)))
+                self.end_headers()
+                self.wfile.write(payload)
+                return
             self.send_error(404)
             return
         target = DEFAULT_REPORT_DIR / "latest.html"
@@ -223,6 +255,9 @@ def generate(command: dict[str, object] | None = None) -> Path:
     html = render_full_report(report, settings.language)
     email_html = render_email_report(report, settings.language, report_url=report_url)
     target = save_report(report, html, archive=settings.archive_reports)
+    summary = build_summary(report, report_path)
+    save_summary(summary)
+    client.fire_event("climate_report_generated", summary)
     email_target = DEFAULT_REPORT_DIR / "latest-email.html"
     email_target.write_text(email_html, encoding="utf-8")
     LOGGER.info("Report written to %s", target)
@@ -251,6 +286,14 @@ def generate(command: dict[str, object] | None = None) -> Path:
 
 def main() -> int:
     start_report_server()
+    startup_client = HomeAssistantClient()
+    try:
+        startup_client.ensure_discovery()
+        previous_summary = load_summary()
+        if previous_summary:
+            startup_client.fire_event("climate_report_generated", previous_summary)
+    except Exception:
+        LOGGER.exception("Could not publish Climate Report discovery/summary")
     LOGGER.info("Climate Report is ready; waiting for stdin commands")
     for line in sys.stdin:
         try:
@@ -259,6 +302,11 @@ def main() -> int:
                 command = json.loads(command)
             if not isinstance(command, dict):
                 raise ValueError("Command must be a JSON object")
+            if command.get("command") == "publish_summary":
+                summary = load_summary()
+                if summary:
+                    HomeAssistantClient().fire_event("climate_report_generated", summary)
+                continue
             if command.get("command") != "generate":
                 LOGGER.warning("Ignoring unsupported command: %s", command.get("command"))
                 continue

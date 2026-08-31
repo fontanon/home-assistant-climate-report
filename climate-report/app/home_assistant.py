@@ -62,6 +62,21 @@ class HomeAssistantClient:
         suffix = "?return_response" if return_response else ""
         return self.request("POST", f"services/{domain}/{service}{suffix}", data)
 
+    def fire_event(self, event_type: str, data: dict[str, Any]) -> Any:
+        return self.request("POST", f"events/{event_type}", data)
+
+    def ensure_discovery(self) -> None:
+        addon = self.supervisor_request("GET", "addons/self/info").get("data", {})
+        slug = addon.get("slug")
+        discoveries = self.supervisor_request("GET", "discovery").get("data", {}).get("discovery", [])
+        if any(item.get("addon") == slug and item.get("service") == "climate_report" for item in discoveries):
+            return
+        self.supervisor_request(
+            "POST",
+            "discovery",
+            {"service": "climate_report", "config": {"slug": slug}},
+        )
+
     def get_statistics(
         self,
         statistic_ids: list[str],

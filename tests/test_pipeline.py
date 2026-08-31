@@ -20,6 +20,7 @@ from metrics import Summary  # noqa: E402
 from periods import resolve_periods  # noqa: E402
 from render import render_email_report, render_full_report  # noqa: E402
 from report import VariableReport  # noqa: E402
+from summary import build_summary  # noqa: E402
 
 
 class FakeHomeAssistantClient:
@@ -161,6 +162,10 @@ class PipelineTest(unittest.TestCase):
         self.assertIn("Fuera del resumen general", heater_html)
         self.assertIn("1 rooms", heater_html)
         self.assertNotIn("75.0 °C", heater_html)
+        summary = build_summary(report_with_heater, "/app/climate_report")
+        self.assertAlmostEqual(summary["mean_temperature"], report.rooms[0].temperature.overall.mean)
+        self.assertEqual(summary["excluded_rooms"], ["Termo"])
+        self.assertIsNotNone(summary["temperature_year_delta"])
 
         with TemporaryDirectory() as temporary:
             target = save_report(report, html, report_dir=Path(temporary))

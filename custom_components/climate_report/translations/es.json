@@ -1,0 +1,17 @@
+{
+  "config": {
+    "step": {"confirm": {"title": "Climate Report", "description": "Conecta la aplicación Climate Report detectada con Home Assistant."}},
+    "abort": {"single_instance_allowed": "Solo se admite una instancia de Climate Report.", "install_addon_first": "Instala e inicia primero la aplicación Climate Report."}
+  },
+  "entity": {
+    "sensor": {
+      "mean_temperature": {"name": "Temperatura media"},
+      "mean_humidity": {"name": "Humedad media"},
+      "temperature_year_delta": {"name": "Temperatura interanual"},
+      "humidity_year_delta": {"name": "Humedad interanual"},
+      "coverage": {"name": "Cobertura"},
+      "last_report": {"name": "Último informe"}
+    },
+    "button": {"generate": {"name": "Generar informe"}}
+  }
+}

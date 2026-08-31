@@ -77,6 +77,20 @@ sent after successful generation.
 The app uses Home Assistant's internal API proxy and the automatically supplied
 `SUPERVISOR_TOKEN`. It does not require a long-lived access token.
 
+## Dashboard
+
+The compact summary is available inside Ingress at `/summary`. The optional
+Climate Report integration creates registered temperature, humidity, coverage,
+year-over-year and last-report entities plus a generate button. The optional
+`custom:climate-report-card` supports `compact`, `normal` and `detailed` modes.
+
+```yaml
+type: custom:climate-report-card
+entity: sensor.climate_report_last_report
+mode: normal
+navigation_path: /app/9d838440_climate_report
+```
+
 ## Persistent files
 
 Generated files are stored under `reports/` in the app configuration mount:

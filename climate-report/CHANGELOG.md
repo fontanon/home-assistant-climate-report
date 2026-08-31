@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.0
+
+- Add a compact Ingress summary view and JSON summary API.
+- Publish report summaries as Home Assistant events, including year-over-year temperature and humidity deltas.
+- Advertise Climate Report through Supervisor discovery for the companion integration.
+
 ## 0.6.0
 
 - Allow individual sensors, such as a water heater, to remain visible while being excluded from whole-home averages, peaks and coverage.

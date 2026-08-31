@@ -1,0 +1,17 @@
+{
+  "config": {
+    "step": {"confirm": {"title": "Climate Report", "description": "Connect the discovered Climate Report app to Home Assistant."}},
+    "abort": {"single_instance_allowed": "Only one Climate Report instance is supported.", "install_addon_first": "Install and start the Climate Report app first."}
+  },
+  "entity": {
+    "sensor": {
+      "mean_temperature": {"name": "Mean temperature"},
+      "mean_humidity": {"name": "Mean humidity"},
+      "temperature_year_delta": {"name": "Temperature year-over-year"},
+      "humidity_year_delta": {"name": "Humidity year-over-year"},
+      "coverage": {"name": "Coverage"},
+      "last_report": {"name": "Last report"}
+    },
+    "button": {"generate": {"name": "Generate report"}}
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "domain": "climate_report",
+  "name": "Climate Report",
+  "codeowners": ["@fontanon"],
+  "config_flow": true,
+  "documentation": "https://github.com/fontanon/home-assistant-climate-report",
+  "iot_class": "local_push",
+  "version": "0.1.0"
+}
