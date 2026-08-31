@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import Event, HomeAssistant
 from homeassistant.helpers.dispatcher import async_dispatcher_send
@@ -23,7 +25,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await hass.services.async_call(
         "hassio",
         "addon_stdin",
-        {"addon": entry.data["addon_slug"], "input": {"command": "publish_summary"}},
+        {
+            "addon": entry.data["addon_slug"],
+            "input": json.dumps({"command": "publish_summary"}),
+        },
         blocking=False,
     )
     return True

@@ -1,6 +1,7 @@
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import Entity
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
+from homeassistant.core import callback
 
 from .const import DOMAIN, SIGNAL_UPDATE
 
@@ -30,6 +31,7 @@ class ClimateReportEntity(Entity):
             )
         )
 
+    @callback
     def _handle_update(self, entry_id: str) -> None:
         if entry_id == self.entry.entry_id:
             self.async_write_ha_state()
